@@ -1,2 +1,73 @@
-# PROJECT-INFO1120-DEV-SW
-Trabalho final da disciplina de Desenvolvimento de Software (INFO1120) - UFRGS
+# PROJECT-INFO1120-DEV-SW AKA Pepper Music Player
+
+Gerador de sequências musicais a partir de texto INF01120 
+
+## Requisitos
+
+| Ferramenta | Versão | Como conferir |
+|---|---|---|
+| JDK (Java Development Kit) | 21 (a mesma do `pom.xml`) | `java -version` |
+| Apache Maven | 3.8 ou superior | `mvn -v` |
+| Saída de áudio | alto-falante ou fone funcionando | – |
+| Internet | só no primeiro build (baixa as dependências) | – |
+
+O Swing (interface gráfica) já vem no JDK; não é preciso instalar mais nada.
+
+### Instalando o Maven no Windows
+
+1. Baixe o ZIP "Binary" em <https://maven.apache.org/download.cgi> e extraia, por exemplo, em `C:\Tools\apache-maven-3.9.x`.
+2. Crie a variável de ambiente `JAVA_HOME` apontando para a pasta do JDK.
+3. Adicione `C:\Tools\apache-maven-3.9.x\bin` ao `Path`.
+4. Abra um **novo** terminal e confira com `mvn -v`.
+
+## Como rodar
+
+Na pasta do projeto (onde está o `pom.xml`):
+
+```bash
+mvn clean package
+java -jar target/pepper_music_player-1.0-SNAPSHOT.jar
+```
+
+- `mvn clean package` apaga o `target/`, compila e gera um JAR único (*fat JAR*, via `maven-shade-plugin`) que já inclui o JFugue.
+- Você precisa repetir o `mvn clean package` sempre que alterar o código. Para só checar se compila: `mvn compile`.
+- O JAR gerado roda em qualquer máquina com Java instalado, sem Maven.
+
+### Pelo VSCode
+
+1. Instale o **Extension Pack for Java** (inclui *Maven for Java*).
+2. Abra a pasta do projeto (a que contém o `pom.xml`).
+3. Execute a classe `com.example.Main` pelo botão **Run** acima do método `main`, ou use o painel *Maven* → `Lifecycle` → `package`.
+
+## Estrutura do projeto
+
+```
+pom.xml
+src/main/java/com/example/
+    Main.java               ponto de entrada; abre a TelaPrincipal
+    TelaPrincipal.java      interface gráfica (Swing)
+    ControladorAudio.java   coordena o fluxo e guarda a configuração do usuário
+    EstadoControlador.java  enum ATIVO / PARADO
+    TradutorInstrucao.java  converte o texto em eventos (regras do enunciado)
+    EventoAudio.java        nota pronta para tocar (imutável)
+    TocadorAudio.java       única classe que conhece o JFugue
+    Instrumento.java        catálogo número MIDI → nome
+docs/
+    Diagrama_Classes.png    diagrama de classes
+```
+
+## Arquitetura
+
+Fluxo principal:
+
+```
+TelaPrincipal → ControladorAudio → TradutorInstrucao → List<EventoAudio> → TocadorAudio → JFugue
+```
+
+Cada camada conversa apenas com a de baixo: a tela não conhece o tradutor nem o som, o tradutor não conhece o som e o tocador não conhece a interface.
+O diagrama completo, com atributos e métodos, está em `docs/Diagrama_Classes.png`.
+
+## Dependências (resolvidas pelo Maven)
+
+- **JFugue 4.0.3** (`jfugue:jfugue`), publicada no repositório **Clojars**, e não no Maven Central. Por isso o `pom.xml` declara o repositório `https://repo.clojars.org`.
+- O JFugue traz o Clojure como dependência transitiva, mas o programa não o usa. As duas entradas (`org.clojure:clojure` e `clojure-contrib`) estão em `<exclusions>` no `pom.xml`.

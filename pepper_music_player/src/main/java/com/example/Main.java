@@ -1,9 +1,18 @@
 package com.example;
 
-import org.jfugue.Player;
+import javax.swing.SwingUtilities;
 
 public class Main {
+
     public static void main(String[] args) {
-        new Player().play("C D E");
+        Runnable tarefaDeInicializacao = new Runnable() {
+            @Override
+            public void run() {
+                TelaPrincipal tela = new TelaPrincipal();
+                tela.setVisible(true);
+            }
+        };
+
+        SwingUtilities.invokeLater(tarefaDeInicializacao);
     }
 }
