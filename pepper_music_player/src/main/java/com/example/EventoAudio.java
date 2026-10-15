@@ -5,46 +5,29 @@ public class EventoAudio {
     int instrumento;
     int oitava;
     int volume;
-    int duracao;
+
+    // Construtor EventoAudio
+    public EventoAudio(String nota, int instrumento, int oitava, int volume) {
+        this.nota = nota;
+        this.instrumento = instrumento;
+        this.oitava = oitava;
+        this.volume = volume;
+    }
 
     public String getNota() {
         return nota;
-    }
-
-    public void setNota(String nota) {
-        this.nota = nota;
     }
 
     public int getInstrumento() {
         return instrumento;
     }
 
-    public void setInstrumento(int instrumento) {
-        this.instrumento = instrumento;
-    }
-
     public int getOitava() {
         return oitava;
     }
 
-    public void setOitava(int oitava) {
-        this.oitava = oitava;
-    }
-
     public int getVolume() {
         return volume;
-    }
-
-    public void setVolume(int volume) {
-        this.volume = volume;
-    }
-
-    public int getDuracao() {
-        return duracao;
-    }
-
-    public void setDuracao(int duracao) {
-        this.duracao = duracao;
     }
 
 }
