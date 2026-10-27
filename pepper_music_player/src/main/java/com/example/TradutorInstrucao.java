@@ -38,6 +38,21 @@ public class TradutorInstrucao {
         List<EventoAudio> eventos = new ArrayList<>();
         int i = 0;
 
+        // Processa delay inicial [n] nas linhas
+        if (linha.startsWith("[")) {
+            int fechaColchete = linha.indexOf(']');
+            if (fechaColchete != -1) {
+                try {
+                    int delay = Integer.parseInt(linha.substring(1, fechaColchete).trim());
+                    // 1 beat = semínima (duração 3)
+                    for (int b = 0; b < delay; b++) {
+                        eventos.add(new EventoAudio(PAUSA, instrumentoAtual, oitavaAtual, volumeAtual, 3));
+                    }
+                } catch (NumberFormatException ignored) {}
+                i = fechaColchete + 1;
+            }
+        }
+
         while (i < linha.length()) {
             char c = linha.charAt(i);
             String instrucao = String.valueOf(c);
