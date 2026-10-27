@@ -13,7 +13,7 @@ public class TelaPrincipal extends JFrame {
     public TelaPrincipal() {
         this.controlador = new ControladorAudio();
 
-        setTitle("Pepper Music Player - Fase 2");
+        setTitle("Pepper Music Player");
         setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
