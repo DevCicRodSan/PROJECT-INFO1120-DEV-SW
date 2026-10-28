@@ -39,8 +39,8 @@
 
     <repositories>
         <repository>
-            <id>clojars</id>
-            <url>https://repo.clojars.org</url>
+            <id>sing-group</id>
+            <url>https://maven.sing-group.org/repository/maven/</url>
         </repository>
     </repositories>
 
@@ -48,17 +48,7 @@
     <dependency>
         <groupId>jfugue</groupId>
         <artifactId>jfugue</artifactId>
-        <version>4.0.3</version>
-        <exclusions>
-            <exclusion>
-                <groupId>org.clojure</groupId>
-                <artifactId>clojure</artifactId>
-            </exclusion>
-            <exclusion>
-                <groupId>org.clojure</groupId>
-                <artifactId>clojure-contrib</artifactId>
-            </exclusion>
-        </exclusions>
+        <version>5.0.9</version>
     </dependency>
 </dependencies>
 

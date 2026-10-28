@@ -41,5 +41,4 @@ java -jar target/pepper_music_player-1.0-SNAPSHOT.jar
 
 ## Dependências (resolvidas pelo Maven)
 
-- **JFugue 4.0.3** (`jfugue:jfugue`), publicada no repositório **Clojars**, e não no Maven Central. Por isso o `pom.xml` declara o repositório `https://repo.clojars.org`.
-- O JFugue traz o Clojure como dependência transitiva, mas o programa não o usa. As duas entradas (`org.clojure:clojure` e `clojure-contrib`) estão em `<exclusions>` no `pom.xml`.
+- **JFugue 5.0.9** (`jfugue:jfugue`). Não está no Maven Central; está publicada no repositório Maven do **SING Group**, por isso o `pom.xml` declara o repositório `https://maven.sing-group.org/repository/maven/`.
