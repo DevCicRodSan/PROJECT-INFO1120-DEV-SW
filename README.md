@@ -39,34 +39,6 @@ java -jar target/pepper_music_player-1.0-SNAPSHOT.jar
 2. Abra a pasta do projeto (a que contém o `pom.xml`).
 3. Execute a classe `com.example.Main` pelo botão **Run** acima do método `main`, ou use o painel *Maven* → `Lifecycle` → `package`.
 
-## Estrutura do projeto
-
-```
-pom.xml
-src/main/java/com/example/
-    Main.java               ponto de entrada; abre a TelaPrincipal
-    TelaPrincipal.java      interface gráfica (Swing)
-    ControladorAudio.java   coordena o fluxo e guarda a configuração do usuário
-    EstadoControlador.java  enum ATIVO / PARADO
-    TradutorInstrucao.java  converte o texto em eventos (regras do enunciado)
-    EventoAudio.java        nota pronta para tocar (imutável)
-    TocadorAudio.java       única classe que conhece o JFugue
-    Instrumento.java        catálogo número MIDI → nome
-docs/
-    Diagrama_Classes.png    diagrama de classes
-```
-
-## Arquitetura
-
-Fluxo principal:
-
-```
-TelaPrincipal → ControladorAudio → TradutorInstrucao → List<EventoAudio> → TocadorAudio → JFugue
-```
-
-Cada camada conversa apenas com a de baixo: a tela não conhece o tradutor nem o som, o tradutor não conhece o som e o tocador não conhece a interface.
-O diagrama completo, com atributos e métodos, está em `docs/Diagrama_Classes.png`.
-
 ## Dependências (resolvidas pelo Maven)
 
 - **JFugue 4.0.3** (`jfugue:jfugue`), publicada no repositório **Clojars**, e não no Maven Central. Por isso o `pom.xml` declara o repositório `https://repo.clojars.org`.
