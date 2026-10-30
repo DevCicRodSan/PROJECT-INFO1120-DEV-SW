@@ -38,3 +38,12 @@ java -jar target/pepper_music_player-1.0-SNAPSHOT.jar
 ## Dependências (resolvidas pelo Maven)
 
 - **JFugue 5.0.9** (`jfugue:jfugue`). Não está no Maven Central; está publicada no repositório Maven do **SING Group**, por isso o `pom.xml` declara o repositório `https://maven.sing-group.org/repository/maven/`.
+
+## Uso de IA
+
+Durante o desenvolvimento, o grupo usou assistentes de IA para:
+
+- **Convenções:** discussão de convenções de código Java e Maven (tipos, pacotes, estrutura do projeto).
+- **Configuração:** geração e ajustes do `pom.xml`.
+- **Documentação:** redação de partes deste README.
+- **Testes:** criação de músicas de exemplo.
