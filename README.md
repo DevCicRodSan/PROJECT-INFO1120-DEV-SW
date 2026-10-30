@@ -8,10 +8,6 @@ Gerador de sequências musicais a partir de texto INF01120
 |---|---|---|
 | JDK (Java Development Kit) | 21 (a mesma do `pom.xml`) | `java -version` |
 | Apache Maven | 3.8 ou superior | `mvn -v` |
-| Saída de áudio | alto-falante ou fone funcionando | – |
-| Internet | só no primeiro build (baixa as dependências) | – |
-
-O Swing (interface gráfica) já vem no JDK; não é preciso instalar mais nada.
 
 ### Instalando o Maven no Windows
 
