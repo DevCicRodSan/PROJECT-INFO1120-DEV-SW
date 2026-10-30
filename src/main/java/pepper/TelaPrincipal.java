@@ -3,6 +3,7 @@ package pepper;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.io.File;
 
 public class TelaPrincipal extends JFrame {
@@ -11,7 +12,6 @@ public class TelaPrincipal extends JFrame {
     private File arquivoTxtAtual;
     private JSpinner spinnerBpm;
     private JComboBox<Instrumento>[] combosInstrumento;
-    private JButton btnTocar;
 
     public TelaPrincipal() {
         this.controlador = new ControladorAudio();
@@ -45,8 +45,7 @@ public class TelaPrincipal extends JFrame {
 
         // Painel Inferior (Botões de Reprodução)
         JPanel painelReproducao = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        btnTocar = new JButton();
-        atualizarBotaoTocar();
+        JButton btnTocar = new JButton("Tocar");
         painelReproducao.add(btnTocar);
         add(painelReproducao, BorderLayout.SOUTH);
 
@@ -80,70 +79,56 @@ public class TelaPrincipal extends JFrame {
         add(painelLateralTopo, BorderLayout.EAST);
 
         // Ações dos Botões
-        // Um único botão: Tocar quando parado, Parar enquanto toca.
-        // Assim não é possível iniciar uma segunda reprodução por cima da primeira.
-        btnTocar.addActionListener(e -> {
-            if (controlador.getEstado() == EstadoReproducao.TOCANDO) {
-                // O botão volta a "Tocar" quando a reprodução de fato termina (aoTerminar abaixo)
-                controlador.parar();
-                return;
-            }
-            aplicarConfiguracao();
-            Runnable aoTerminar = () -> SwingUtilities.invokeLater(() -> atualizarBotaoTocar());
-            controlador.tocarTexto(areaTexto.getText(), aoTerminar);
-            atualizarBotaoTocar();
-        });
-
-        btnAbrirTxt.addActionListener(e -> {
-            JFileChooser chooser = new JFileChooser();
-            chooser.setFileFilter(new FileNameExtensionFilter("Arquivos de Texto", "txt"));
-            if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-                try {
-                    arquivoTxtAtual = chooser.getSelectedFile();
-                    areaTexto.setText(controlador.carregarArquivoTxt(arquivoTxtAtual));
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(this, "Erro ao abrir: " + ex.getMessage());
-                }
-            }
-        });
-
-        btnSalvarTxt.addActionListener(e -> {
-            if (arquivoTxtAtual != null) {
-                try {
-                    controlador.salvarArquivoTxt(areaTexto.getText(), arquivoTxtAtual);
-                    JOptionPane.showMessageDialog(this, "Arquivo salvo com sucesso!");
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(this, "Erro ao salvar: " + ex.getMessage());
-                }
-            } else {
-                JOptionPane.showMessageDialog(this, "Abra um arquivo TXT primeiro.");
-            }
-        });
-
-        btnExportarMidi.addActionListener(e -> {
-            JFileChooser chooser = new JFileChooser();
-            chooser.setFileFilter(new FileNameExtensionFilter("Arquivos MIDI", "mid"));
-            if (chooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
-                File arquivoMidi = chooser.getSelectedFile();
-                if (!arquivoMidi.getName().toLowerCase().endsWith(".mid")) {
-                    arquivoMidi = new File(arquivoMidi.getParentFile(), arquivoMidi.getName() + ".mid");
-                }
-                aplicarConfiguracao();
-                controlador.exportarMidi(areaTexto.getText(), arquivoMidi.getAbsolutePath());
-                JOptionPane.showMessageDialog(this, "MIDI exportado com sucesso!");
-            }
-        });
+        btnTocar.addActionListener(this::aoClicarTocar);
+        btnAbrirTxt.addActionListener(this::aoClicarAbrirTxt);
+        btnSalvarTxt.addActionListener(this::aoClicarSalvarTxt);
+        btnExportarMidi.addActionListener(this::aoClicarExportarMidi);
     }
 
-    // Texto e ícone do botão seguem o estado do controlador
-    private void atualizarBotaoTocar() {
-        EstadoReproducao estado = controlador.getEstado();
-        if (estado == EstadoReproducao.TOCANDO) {
-            btnTocar.setText("Parar");
-        } else {
-            btnTocar.setText("Tocar");
+    // A janela fica bloqueada até a música terminar (decisão de projeto: tudo em uma thread só)
+    private void aoClicarTocar(ActionEvent e) {
+        aplicarConfiguracao();
+        controlador.tocarTexto(areaTexto.getText());
+    }
+
+    private void aoClicarAbrirTxt(ActionEvent e) {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setFileFilter(new FileNameExtensionFilter("Arquivos de Texto", "txt"));
+        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            try {
+                arquivoTxtAtual = chooser.getSelectedFile();
+                areaTexto.setText(controlador.carregarArquivoTxt(arquivoTxtAtual));
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Erro ao abrir: " + ex.getMessage());
+            }
         }
-        btnTocar.setIcon(new IconeReproducao(estado));
+    }
+
+    private void aoClicarSalvarTxt(ActionEvent e) {
+        if (arquivoTxtAtual != null) {
+            try {
+                controlador.salvarArquivoTxt(areaTexto.getText(), arquivoTxtAtual);
+                JOptionPane.showMessageDialog(this, "Arquivo salvo com sucesso!");
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Erro ao salvar: " + ex.getMessage());
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "Abra um arquivo TXT primeiro.");
+        }
+    }
+
+    private void aoClicarExportarMidi(ActionEvent e) {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setFileFilter(new FileNameExtensionFilter("Arquivos MIDI", "mid"));
+        if (chooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            File arquivoMidi = chooser.getSelectedFile();
+            if (!arquivoMidi.getName().toLowerCase().endsWith(".mid")) {
+                arquivoMidi = new File(arquivoMidi.getParentFile(), arquivoMidi.getName() + ".mid");
+            }
+            aplicarConfiguracao();
+            controlador.exportarMidi(areaTexto.getText(), arquivoMidi.getAbsolutePath());
+            JOptionPane.showMessageDialog(this, "MIDI exportado com sucesso!");
+        }
     }
 
     // Passa ao controlador o que o usuário configurou na tela (BPM e instrumento de cada voz)

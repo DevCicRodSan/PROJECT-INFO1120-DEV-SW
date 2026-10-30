@@ -2,7 +2,6 @@ package pepper;
 
 import org.jfugue.midi.MidiFileManager;
 import org.jfugue.pattern.Pattern;
-import org.jfugue.player.ManagedPlayer;
 import org.jfugue.player.Player;
 import java.io.File;
 import java.io.IOException;
@@ -56,7 +55,8 @@ public class TocadorAudio {
             for (EventoAudio evento : voz) {
                 if (evento.getVariacaoBpm() != ultimaVariacao) {
                     int mudanca = evento.getVariacaoBpm() - ultimaVariacao;
-                    variacaoPorInstante.merge(instante, mudanca, Integer::sum);
+                    int variacaoNoInstante = variacaoPorInstante.getOrDefault(instante, 0) + mudanca;
+                    variacaoPorInstante.put(instante, variacaoNoInstante);
                     ultimaVariacao = evento.getVariacaoBpm();
                 }
                 instante += duracaoEmBeats(evento.getDuracao());
@@ -107,23 +107,9 @@ public class TocadorAudio {
         return padraoCompleto;
     }
 
-    // Toca em background; aoTerminar roda quando a música acaba ou é interrompida por parar()
-    public void tocarSequencia(List<List<EventoAudio>> trilhas, Runnable aoTerminar) {
+    public void tocarSequencia(List<List<EventoAudio>> trilhas) {
         Pattern padrao = construirPadraoMusical(trilhas);
-        new Thread(() -> {
-            try {
-                player.play(padrao); // bloqueia até o fim da música ou até parar()
-            } finally {
-                aoTerminar.run();
-            }
-        }).start();
-    }
-
-    public void parar() {
-        ManagedPlayer reproducao = player.getManagedPlayer();
-        if (reproducao.isStarted() && !reproducao.isFinished()) {
-            reproducao.finish(); // faz o player.play() acima retornar
-        }
+        player.play(padrao); // bloqueia até o fim da música
     }
 
     // Exportação MIDI (Requisito Fase 2)

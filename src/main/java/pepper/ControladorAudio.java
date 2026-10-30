@@ -17,8 +17,6 @@ public class ControladorAudio {
         Instrumento.CRAVO, Instrumento.ORGAO_DE_IGREJA, Instrumento.PIANO, Instrumento.FAGOTE
     };
 
-    // volatile: muda na thread de reprodução e é lido pela thread da interface
-    private volatile EstadoReproducao estado = EstadoReproducao.PARADO;
 
     // Construtor
     public ControladorAudio() {
@@ -56,29 +54,13 @@ public class ControladorAudio {
         return numeros;
     }
 
-    public EstadoReproducao getEstado() {
-        return estado;
-    }
-
-    // Não faz nada se já estiver tocando ou se não houver texto.
-    // aoTerminar roda (fora da thread da interface) quando a música acaba ou é parada,
-    // depois que o estado já voltou a PARADO.
-    public void tocarTexto(String texto, Runnable aoTerminar) {
-        if (estado == EstadoReproducao.TOCANDO || texto == null || texto.isEmpty())
+    // Só retorna quando a música termina (a interface fica bloqueada enquanto toca)
+    public void tocarTexto(String texto) {
+        if (texto == null || texto.isEmpty())
             return;
         List<List<EventoAudio>> trilhas = tradutor.traduzir(texto, numerosInstrumentosBase());
         tocador.definirBpm(bpmGlobal);
-        estado = EstadoReproducao.TOCANDO;
-        tocador.tocarSequencia(trilhas, () -> {
-            estado = EstadoReproducao.PARADO;
-            aoTerminar.run();
-        });
-    }
-
-    public void parar() {
-        if (estado == EstadoReproducao.TOCANDO) {
-            tocador.parar();
-        }
+        tocador.tocarSequencia(trilhas);
     }
 
     public void exportarMidi(String texto, String caminhoArquivo) {
