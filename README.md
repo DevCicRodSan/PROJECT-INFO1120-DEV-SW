@@ -33,7 +33,7 @@ java -jar target/pepper_music_player-1.0-SNAPSHOT.jar
 
 1. Instale o **Extension Pack for Java** (inclui *Maven for Java*).
 2. Abra a pasta do projeto (a que contém o `pom.xml`).
-3. Execute a classe `com.example.Main` pelo botão **Run** acima do método `main`, ou use o painel *Maven* → `Lifecycle` → `package`.
+3. Execute a classe `pepper.Main` pelo botão **Run** acima do método `main`, ou use o painel *Maven* → `Lifecycle` → `package`.
 
 ## Dependências (resolvidas pelo Maven)
 

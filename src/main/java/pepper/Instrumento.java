@@ -1,4 +1,4 @@
-package com.example;
+package pepper;
 
 // Catálogo de instrumentos do software (General MIDI, numeração de 1 a 128 como no enunciado).
 // O TocadorAudio converte para a numeração do JFugue (0 a 127).

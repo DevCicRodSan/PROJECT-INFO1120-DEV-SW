@@ -1,4 +1,4 @@
-package com.example;
+package pepper;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;

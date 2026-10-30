@@ -1,4 +1,4 @@
-package com.example;
+package pepper;
 
 import javax.swing.Icon;
 import java.awt.Color;
