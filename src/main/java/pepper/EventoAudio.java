@@ -1,4 +1,4 @@
-package com.example;
+package pepper;
 
 public class EventoAudio {
     private String nota;
@@ -6,13 +6,15 @@ public class EventoAudio {
     private int oitava;
     private int volume;
     private int duracao;
+    private int variacaoBpm; // soma dos '>' e '<' já lidos na linha
 
-    public EventoAudio(String nota, int instrumento, int oitava, int volume, int duracao) {
+    public EventoAudio(String nota, int instrumento, int oitava, int volume, int duracao, int variacaoBpm) {
         this.nota = nota;
         this.instrumento = instrumento;
         this.oitava = oitava;
         this.volume = volume;
         this.duracao = duracao;
+        this.variacaoBpm = variacaoBpm;
     }
 
     public String getNota() { return nota; }
@@ -20,4 +22,5 @@ public class EventoAudio {
     public int getOitava() { return oitava; }
     public int getVolume() { return volume; }
     public int getDuracao() { return duracao; }
+    public int getVariacaoBpm() { return variacaoBpm; }
 }

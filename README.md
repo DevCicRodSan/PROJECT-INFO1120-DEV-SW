@@ -8,10 +8,6 @@ Gerador de sequências musicais a partir de texto INF01120
 |---|---|---|
 | JDK (Java Development Kit) | 21 (a mesma do `pom.xml`) | `java -version` |
 | Apache Maven | 3.8 ou superior | `mvn -v` |
-| Saída de áudio | alto-falante ou fone funcionando | – |
-| Internet | só no primeiro build (baixa as dependências) | – |
-
-O Swing (interface gráfica) já vem no JDK; não é preciso instalar mais nada.
 
 ### Instalando o Maven no Windows
 
@@ -37,8 +33,17 @@ java -jar target/pepper_music_player-1.0-SNAPSHOT.jar
 
 1. Instale o **Extension Pack for Java** (inclui *Maven for Java*).
 2. Abra a pasta do projeto (a que contém o `pom.xml`).
-3. Execute a classe `com.example.Main` pelo botão **Run** acima do método `main`, ou use o painel *Maven* → `Lifecycle` → `package`.
+3. Execute a classe `pepper.Main` pelo botão **Run** acima do método `main`, ou use o painel *Maven* → `Lifecycle` → `package`.
 
 ## Dependências (resolvidas pelo Maven)
 
 - **JFugue 5.0.9** (`jfugue:jfugue`). Não está no Maven Central; está publicada no repositório Maven do **SING Group**, por isso o `pom.xml` declara o repositório `https://maven.sing-group.org/repository/maven/`.
+
+## Uso de IA
+
+Durante o desenvolvimento, o grupo usou assistentes de IA para:
+
+- **Convenções:** discussão de convenções de código Java e Maven (tipos, pacotes, estrutura do projeto).
+- **Configuração:** geração e ajustes do `pom.xml`.
+- **Documentação:** redação de partes deste README.
+- **Testes:** criação de músicas de exemplo.
