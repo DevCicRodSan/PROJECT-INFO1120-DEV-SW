@@ -4,21 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TradutorInstrucao {
-    private static final String PAUSA = "R";
-    private static final int PASSO_BPM = 10; // '>' acelera e '<' desacelera
 
     // Configurações base das 4 vozes
     private static final int[] OITAVAS_BASE = {6, 5, 4, 3};
     private static final int[] VOLUMES_BASE = {100, 80, 60, 40};
     // Os instrumentos base vêm do ControladorAudio (escolhidos na interface)
 
-    private int instrumentoAtual;
-    private int oitavaAtual;
-    private int volumeAtual;
-    private int oitavaBaseDaLinha;
-    private int variacaoBpm;
-    private String ultimaNota;
-    private boolean anteriorEraNota;
+    private final ContextoTraducao contexto = new ContextoTraducao();
 
     // instrumentosBase: número GM (1 a 128) do instrumento inicial de cada voz
     public List<List<EventoAudio>> traduzir(String texto, int[] instrumentosBase) {
@@ -31,99 +23,75 @@ public class TradutorInstrucao {
 
         for (int i = 0; i < linhas.length; i++) {
             int idVoz = i % 4; // Cicla entre 0 e 3
-            resetarEstado(instrumentosBase[idVoz], OITAVAS_BASE[idVoz], VOLUMES_BASE[idVoz]);
+            contexto.iniciarLinha(instrumentosBase[idVoz], OITAVAS_BASE[idVoz], VOLUMES_BASE[idVoz]);
             trilhas.add(processarLinha(linhas[i]));
         }
         return trilhas;
     }
 
     private List<EventoAudio> processarLinha(String linha) {
-        List<EventoAudio> eventos = new ArrayList<>();
-        int i = 0;
-
-        // Processa delay inicial [n] nas linhas
-        if (linha.startsWith("[")) {
-            int fechaColchete = linha.indexOf(']');
-            if (fechaColchete != -1) {
-                try {
-                    int delay = Integer.parseInt(linha.substring(1, fechaColchete).trim());
-                    // 1 beat = semínima (duração 3)
-                    for (int b = 0; b < delay; b++) {
-                        eventos.add(criarEvento(PAUSA, 3));
-                    }
-                } catch (NumberFormatException ignored) {}
-                i = fechaColchete + 1;
-            }
-        }
+        int i = processarDelayInicial(linha);
 
         while (i < linha.length()) {
             char c = linha.charAt(i);
             String instrucao = String.valueOf(c);
 
             if (c >= 'A' && c <= 'G') {
-                int duracao = 3; // Padrão: semínima
-                
+                int duracao = ContextoTraducao.DURACAO_PADRAO;
+
                 // Look-ahead para acidente (# ou b)
                 if (i + 1 < linha.length() && (linha.charAt(i + 1) == '#' || linha.charAt(i + 1) == 'b')) {
                     instrucao += linha.charAt(i + 1);
                     i++;
                 }
-                
+
                 // Look-ahead para duração (:X)
                 if (i + 2 < linha.length() && linha.charAt(i + 1) == ':' && Character.isDigit(linha.charAt(i + 2))) {
                     duracao = Character.getNumericValue(linha.charAt(i + 2));
                     i += 2;
                 }
 
-                eventos.add(criarEvento(instrucao, duracao));
-                ultimaNota = instrucao;
-                anteriorEraNota = true;
+                contexto.adicionarNota(instrucao, duracao);
             } else if (c == '?') {
-                // Sobe uma oitava relativa à oitava base da voz
-                oitavaAtual = oitavaBaseDaLinha + 1;
-                anteriorEraNota = false;
+                contexto.subirOitava();
             } else if (c == 'V') {
-                // Desce uma oitava relativa à oitava base da voz
-                oitavaAtual = Math.max(1, oitavaBaseDaLinha - 1);
-                anteriorEraNota = false;
+                contexto.descerOitava();
             } else if (c == ' ') {
-                // Dobra volume
-                volumeAtual = Math.min(127, volumeAtual * 2);
-                anteriorEraNota = false;
+                contexto.dobrarVolume();
             } else if (c == '>') {
-                // Acelera o BPM global
-                variacaoBpm += PASSO_BPM;
-                anteriorEraNota = false;
+                contexto.acelerar();
             } else if (c == '<') {
-                // Desacelera o BPM global
-                variacaoBpm -= PASSO_BPM;
-                anteriorEraNota = false;
+                contexto.desacelerar();
             } else {
                 // Outras letras/consoantes (incluindo H): se anterior era nota, repete; senão pausa
-                if (anteriorEraNota && instrucao.matches("[^OUIoui0-9?!;,\n<> ]")) {
-                    eventos.add(criarEvento(ultimaNota, 3));
+                if (contexto.ultimaInstrucaoFoiNota() && instrucao.matches("[^OUIoui0-9?!;,\n<> ]")) {
+                    contexto.repetirUltimaNota();
                 } else {
-                    anteriorEraNota = false;
+                    contexto.esquecerUltimaNota();
                 }
             }
             i++;
         }
-        return eventos;
+        return contexto.getEventos();
     }
 
-    // Tira uma "foto" do estado atual da voz e monta o evento
-    private EventoAudio criarEvento(String nota, int duracao) {
-        EstadoVoz estado = new EstadoVoz(instrumentoAtual, oitavaAtual, volumeAtual, variacaoBpm);
-        return new EventoAudio(nota, duracao, estado);
-    }
-
-    private void resetarEstado(int instrumento, int oitava, int volume) {
-        this.instrumentoAtual = instrumento;
-        this.oitavaAtual = oitava;
-        this.oitavaBaseDaLinha = oitava;
-        this.volumeAtual = volume;
-        this.variacaoBpm = 0;
-        this.anteriorEraNota = false;
-        this.ultimaNota = PAUSA;
+    // Delay inicial "[n]": n pausas de 1 beat. Devolve a posição onde a música começa.
+    private int processarDelayInicial(String linha) {
+        if (!linha.startsWith("[")) {
+            return 0;
+        }
+        int fechaColchete = linha.indexOf(']');
+        if (fechaColchete == -1) {
+            return 0;
+        }
+        try {
+            int delay = Integer.parseInt(linha.substring(1, fechaColchete).trim());
+            // 1 beat = semínima (duração 3)
+            for (int b = 0; b < delay; b++) {
+                contexto.adicionarPausa(ContextoTraducao.DURACAO_PADRAO);
+            }
+        } catch (NumberFormatException ignored) {
+        }
+        return fechaColchete + 1;
     }
 }
