@@ -32,7 +32,9 @@ public class TradutorInstrucao {
             return trilhas;
         }
 
-        String[] linhas = texto.split("\n");
+        // Arquivos salvos no Windows terminam as linhas com \r\n: o \r não faz parte da música
+        String textoSemCr = texto.replace("\r", "");
+        String[] linhas = textoSemCr.split("\n");
 
         for (int i = 0; i < linhas.length; i++) {
             int idVoz = i % 4; // Cicla entre 0 e 3
