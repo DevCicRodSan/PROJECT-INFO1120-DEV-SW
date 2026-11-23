@@ -49,7 +49,7 @@ public class TradutorInstrucao {
                     int delay = Integer.parseInt(linha.substring(1, fechaColchete).trim());
                     // 1 beat = semínima (duração 3)
                     for (int b = 0; b < delay; b++) {
-                        eventos.add(new EventoAudio(PAUSA, instrumentoAtual, oitavaAtual, volumeAtual, 3, variacaoBpm));
+                        eventos.add(criarEvento(PAUSA, 3));
                     }
                 } catch (NumberFormatException ignored) {}
                 i = fechaColchete + 1;
@@ -75,7 +75,7 @@ public class TradutorInstrucao {
                     i += 2;
                 }
 
-                eventos.add(new EventoAudio(instrucao, instrumentoAtual, oitavaAtual, volumeAtual, duracao, variacaoBpm));
+                eventos.add(criarEvento(instrucao, duracao));
                 ultimaNota = instrucao;
                 anteriorEraNota = true;
             } else if (c == '?') {
@@ -101,7 +101,7 @@ public class TradutorInstrucao {
             } else {
                 // Outras letras/consoantes (incluindo H): se anterior era nota, repete; senão pausa
                 if (anteriorEraNota && instrucao.matches("[^OUIoui0-9?!;,\n<> ]")) {
-                    eventos.add(new EventoAudio(ultimaNota, instrumentoAtual, oitavaAtual, volumeAtual, 3, variacaoBpm));
+                    eventos.add(criarEvento(ultimaNota, 3));
                 } else {
                     anteriorEraNota = false;
                 }
@@ -109,6 +109,12 @@ public class TradutorInstrucao {
             i++;
         }
         return eventos;
+    }
+
+    // Tira uma "foto" do estado atual da voz e monta o evento
+    private EventoAudio criarEvento(String nota, int duracao) {
+        EstadoVoz estado = new EstadoVoz(instrumentoAtual, oitavaAtual, volumeAtual, variacaoBpm);
+        return new EventoAudio(nota, duracao, estado);
     }
 
     private void resetarEstado(int instrumento, int oitava, int volume) {
