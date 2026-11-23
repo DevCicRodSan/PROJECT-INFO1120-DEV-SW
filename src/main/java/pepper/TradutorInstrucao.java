@@ -3,7 +3,7 @@ package pepper;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TradutorInstrucao {
+public class TradutorInstrucao implements TradutorMusical {
 
     // Configurações base das 4 vozes
     private static final int[] OITAVAS_BASE = {6, 5, 4, 3};
@@ -26,6 +26,7 @@ public class TradutorInstrucao {
     }
 
     // instrumentosBase: número GM (1 a 128) do instrumento inicial de cada voz
+    @Override
     public List<List<EventoAudio>> traduzir(String texto, int[] instrumentosBase) {
         List<List<EventoAudio>> trilhas = new ArrayList<>();
         if (texto == null || texto.isEmpty()) {
