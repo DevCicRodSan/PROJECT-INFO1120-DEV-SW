@@ -11,6 +11,19 @@ public class TradutorInstrucao {
     // Os instrumentos base vêm do ControladorAudio (escolhidos na interface)
 
     private final ContextoTraducao contexto = new ContextoTraducao();
+    private final List<RegraInstrucao> regras = criarRegras();
+
+    // A ordem importa: a primeira regra que reconhece o caractere é a escolhida.
+    // RegraRepeticaoOuPausa reconhece tudo, por isso fica por último.
+    private static List<RegraInstrucao> criarRegras() {
+        List<RegraInstrucao> lista = new ArrayList<>();
+        lista.add(new RegraNota());
+        lista.add(new RegraOitava());
+        lista.add(new RegraVolume());
+        lista.add(new RegraAndamento());
+        lista.add(new RegraRepeticaoOuPausa());
+        return lista;
+    }
 
     // instrumentosBase: número GM (1 a 128) do instrumento inicial de cada voz
     public List<List<EventoAudio>> traduzir(String texto, int[] instrumentosBase) {
@@ -30,49 +43,23 @@ public class TradutorInstrucao {
     }
 
     private List<EventoAudio> processarLinha(String linha) {
-        int i = processarDelayInicial(linha);
+        int posicao = processarDelayInicial(linha);
 
-        while (i < linha.length()) {
-            char c = linha.charAt(i);
-            String instrucao = String.valueOf(c);
-
-            if (c >= 'A' && c <= 'G') {
-                int duracao = ContextoTraducao.DURACAO_PADRAO;
-
-                // Look-ahead para acidente (# ou b)
-                if (i + 1 < linha.length() && (linha.charAt(i + 1) == '#' || linha.charAt(i + 1) == 'b')) {
-                    instrucao += linha.charAt(i + 1);
-                    i++;
-                }
-
-                // Look-ahead para duração (:X)
-                if (i + 2 < linha.length() && linha.charAt(i + 1) == ':' && Character.isDigit(linha.charAt(i + 2))) {
-                    duracao = Character.getNumericValue(linha.charAt(i + 2));
-                    i += 2;
-                }
-
-                contexto.adicionarNota(instrucao, duracao);
-            } else if (c == '?') {
-                contexto.subirOitava();
-            } else if (c == 'V') {
-                contexto.descerOitava();
-            } else if (c == ' ') {
-                contexto.dobrarVolume();
-            } else if (c == '>') {
-                contexto.acelerar();
-            } else if (c == '<') {
-                contexto.desacelerar();
-            } else {
-                // Outras letras/consoantes (incluindo H): se anterior era nota, repete; senão pausa
-                if (contexto.ultimaInstrucaoFoiNota() && instrucao.matches("[^OUIoui0-9?!;,\n<> ]")) {
-                    contexto.repetirUltimaNota();
-                } else {
-                    contexto.esquecerUltimaNota();
-                }
-            }
-            i++;
+        while (posicao < linha.length()) {
+            RegraInstrucao regra = escolherRegra(linha, posicao);
+            int consumidos = regra.executar(linha, posicao, contexto);
+            posicao += consumidos;
         }
         return contexto.getEventos();
+    }
+
+    private RegraInstrucao escolherRegra(String linha, int posicao) {
+        for (RegraInstrucao regra : regras) {
+            if (regra.reconhece(linha, posicao)) {
+                return regra;
+            }
+        }
+        throw new IllegalStateException("Nenhuma regra para o caractere na posição " + posicao);
     }
 
     // Delay inicial "[n]": n pausas de 1 beat. Devolve a posição onde a música começa.
@@ -91,6 +78,7 @@ public class TradutorInstrucao {
                 contexto.adicionarPausa(ContextoTraducao.DURACAO_PADRAO);
             }
         } catch (NumberFormatException ignored) {
+            // O que está entre colchetes não é um número: o delay é ignorado
         }
         return fechaColchete + 1;
     }
