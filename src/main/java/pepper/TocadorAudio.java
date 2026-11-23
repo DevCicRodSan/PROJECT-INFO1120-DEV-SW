@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-public class TocadorAudio {
+public class TocadorAudio implements Tocador {
     private static final int BPM_MINIMO = 20;
 
     private Player player;
@@ -19,30 +19,9 @@ public class TocadorAudio {
         this.player = new Player();
     }
 
+    @Override
     public void definirBpm(int bpm) {
         this.bpmGlobal = bpm;
-    }
-
-    // Mapeamento das durações 1 a 7 para as letras do JFugue
-    private String mapearDuracao(int idDuracao) {
-        return switch (idDuracao) {
-            case 1 -> "w"; // Semibreve
-            case 2 -> "h"; // Mínima
-            case 3 -> "q"; // Semínima
-            case 4 -> "i"; // Colcheia
-            case 5 -> "s"; // Semicolcheia
-            case 6 -> "t"; // Fusa
-            case 7 -> "x"; // Semifusa
-            default -> "q";
-        };
-    }
-
-    // Duração em beats (semínima = 1 beat): semibreve = 4, mínima = 2, ..., semifusa = 1/16
-    private double duracaoEmBeats(int idDuracao) {
-        if (idDuracao < 1 || idDuracao > 7) {
-            return 1.0; // mesmo padrão de mapearDuracao (semínima)
-        }
-        return 4.0 / Math.pow(2, idDuracao - 1);
     }
 
     // O BPM é global: soma os '>' e '<' de todas as vozes na ordem em que acontecem no tempo.
@@ -59,7 +38,8 @@ public class TocadorAudio {
                     variacaoPorInstante.put(instante, variacaoNoInstante);
                     ultimaVariacao = evento.getVariacaoBpm();
                 }
-                instante += duracaoEmBeats(evento.getDuracao());
+                Duracao duracao = Duracao.porCodigo(evento.getDuracao());
+                instante += duracao.getBeats();
             }
         }
 
@@ -83,13 +63,14 @@ public class TocadorAudio {
             for (EventoAudio evento : trilhas.get(i)) {
                 // Instrumento vem em GM 1 a 128; o JFugue conta de 0 a 127
                 stringVoz.append("I").append(evento.getInstrumento() - 1).append(" ");
-                
+
+                Duracao duracao = Duracao.porCodigo(evento.getDuracao());
                 if (evento.getNota().equals("R")) {
-                    stringVoz.append("R").append(mapearDuracao(evento.getDuracao())).append(" ");
+                    stringVoz.append("R").append(duracao.getLetra()).append(" ");
                 } else {
                     stringVoz.append(evento.getNota())
                              .append(evento.getOitava())
-                             .append(mapearDuracao(evento.getDuracao()))
+                             .append(duracao.getLetra())
                              .append("a").append(evento.getVolume()) // 'a' no JFugue = attack velocity (volume)
                              .append(" ");
                 }
@@ -107,19 +88,22 @@ public class TocadorAudio {
         return padraoCompleto;
     }
 
+    @Override
     public void tocarSequencia(List<List<EventoAudio>> trilhas) {
         Pattern padrao = construirPadraoMusical(trilhas);
         player.play(padrao); // bloqueia até o fim da música
     }
 
     // Exportação MIDI (Requisito Fase 2)
+    @Override
     public void exportarMidi(List<List<EventoAudio>> trilhas, String caminhoArquivo) {
         Pattern padrao = construirPadraoMusical(trilhas);
         try {
             File arquivo = new File(caminhoArquivo);
             MidiFileManager.savePatternToMidi(padrao, arquivo);
         } catch (IOException e) {
-            System.err.println("Erro ao salvar arquivo MIDI: " + e.getMessage());
+            throw new FalhaExportacaoMidi(
+                    "Não foi possível salvar o arquivo MIDI: " + e.getMessage(), e);
         }
     }
 }

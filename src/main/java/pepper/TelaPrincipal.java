@@ -9,6 +9,7 @@ import java.io.File;
 public class TelaPrincipal extends JFrame {
     private JTextArea areaTexto;
     private ControladorAudio controlador;
+    private ArquivoTextoService arquivoService = new ArquivoTextoService();
     private File arquivoTxtAtual;
     private JSpinner spinnerBpm;
     private JComboBox<Instrumento>[] combosInstrumento;
@@ -97,7 +98,7 @@ public class TelaPrincipal extends JFrame {
         if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             try {
                 arquivoTxtAtual = chooser.getSelectedFile();
-                areaTexto.setText(controlador.carregarArquivoTxt(arquivoTxtAtual));
+                areaTexto.setText(arquivoService.carregar(arquivoTxtAtual));
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Erro ao abrir: " + ex.getMessage());
             }
@@ -107,7 +108,7 @@ public class TelaPrincipal extends JFrame {
     private void aoClicarSalvarTxt(ActionEvent e) {
         if (arquivoTxtAtual != null) {
             try {
-                controlador.salvarArquivoTxt(areaTexto.getText(), arquivoTxtAtual);
+                arquivoService.salvar(areaTexto.getText(), arquivoTxtAtual);
                 JOptionPane.showMessageDialog(this, "Arquivo salvo com sucesso!");
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Erro ao salvar: " + ex.getMessage());

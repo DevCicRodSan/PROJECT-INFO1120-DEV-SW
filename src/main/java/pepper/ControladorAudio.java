@@ -1,13 +1,14 @@
 package pepper;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.List;
 
 public class ControladorAudio {
-    private TradutorInstrucao tradutor;
-    private TocadorAudio tocador;
+    // Faixa de BPM aceita pelo programa (a interface usa as mesmas constantes)
+    public static final int BPM_MINIMO = 20;
+    public static final int BPM_MAXIMO = 300;
+
+    private final TradutorMusical tradutor;
+    private final Tocador tocador;
 
     // BPM inicial global, definido pelo usuário na interface
     private int bpmGlobal = 120;
@@ -18,10 +19,15 @@ public class ControladorAudio {
     };
 
 
-    // Construtor
+    // Construtor usado pelo programa: cria as implementações reais
     public ControladorAudio() {
-        this.tradutor = new TradutorInstrucao();
-        this.tocador = new TocadorAudio();
+        this(new TradutorInstrucao(), new TocadorAudio());
+    }
+
+    // Construtor que recebe as dependências (usado nos testes com versões falsas)
+    public ControladorAudio(TradutorMusical tradutor, Tocador tocador) {
+        this.tradutor = tradutor;
+        this.tocador = tocador;
         this.tocador.definirBpm(this.bpmGlobal);
     }
 
@@ -30,6 +36,10 @@ public class ControladorAudio {
     }
 
     public void setBpm(int bpm) {
+        if (bpm < BPM_MINIMO || bpm > BPM_MAXIMO) {
+            throw new IllegalArgumentException(
+                    "O BPM deve estar entre " + BPM_MINIMO + " e " + BPM_MAXIMO + ".");
+        }
         this.bpmGlobal = bpm;
     }
 
@@ -42,6 +52,12 @@ public class ControladorAudio {
     }
 
     public void setInstrumentoVoz(int voz, Instrumento instrumento) {
+        if (voz < 0 || voz >= instrumentosPorVoz.length) {
+            throw new IndexOutOfBoundsException("Voz inexistente: " + voz);
+        }
+        if (instrumento == null) {
+            throw new IllegalArgumentException("O instrumento não pode ser nulo.");
+        }
         this.instrumentosPorVoz[voz] = instrumento;
     }
 
@@ -56,26 +72,23 @@ public class ControladorAudio {
 
     // Só retorna quando a música termina (a interface fica bloqueada enquanto toca)
     public void tocarTexto(String texto) {
-        if (texto == null || texto.isEmpty())
+        if (texto == null || texto.isBlank())
             return;
-        List<List<EventoAudio>> trilhas = tradutor.traduzir(texto, numerosInstrumentosBase());
-        tocador.definirBpm(bpmGlobal);
+        List<List<EventoAudio>> trilhas = prepararTrilhas(texto);
         tocador.tocarSequencia(trilhas);
     }
 
     public void exportarMidi(String texto, String caminhoArquivo) {
-        if (texto == null || texto.isEmpty())
+        if (texto == null || texto.isBlank())
             return;
-        List<List<EventoAudio>> trilhas = tradutor.traduzir(texto, numerosInstrumentosBase());
-        tocador.definirBpm(bpmGlobal);
+        List<List<EventoAudio>> trilhas = prepararTrilhas(texto);
         tocador.exportarMidi(trilhas, caminhoArquivo);
     }
 
-    public String carregarArquivoTxt(File arquivo) throws IOException {
-        return Files.readString(arquivo.toPath());
-    }
-
-    public void salvarArquivoTxt(String texto, File arquivo) throws IOException {
-        Files.writeString(arquivo.toPath(), texto);
+    // Traduz o texto em trilhas e configura o BPM do tocador (passo comum a tocar e exportar)
+    private List<List<EventoAudio>> prepararTrilhas(String texto) {
+        List<List<EventoAudio>> trilhas = tradutor.traduzir(texto, numerosInstrumentosBase());
+        tocador.definirBpm(bpmGlobal);
+        return trilhas;
     }
 }
