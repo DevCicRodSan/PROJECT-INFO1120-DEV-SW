@@ -4,6 +4,7 @@ import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 
 public class TelaPrincipal extends JFrame {
@@ -13,6 +14,11 @@ public class TelaPrincipal extends JFrame {
     private File arquivoTxtAtual;
     private JSpinner spinnerBpm;
     private JComboBox<Instrumento>[] combosInstrumento;
+
+    private JButton btnAbrirTxt;
+    private JButton btnSalvarTxt;
+    private JButton btnExportarMidi;
+    private JButton btnTocar;
 
     public TelaPrincipal() {
         this.controlador = new ControladorAudio();
@@ -26,39 +32,68 @@ public class TelaPrincipal extends JFrame {
         inicializarComponentes();
     }
 
+    // Monta a janela juntando as partes; cada parte é criada por um método próprio
     private void inicializarComponentes() {
-        // Área Central (Texto)
+        add(criarEditorTexto(), BorderLayout.CENTER);
+        add(criarPainelArquivos(), BorderLayout.NORTH);
+        add(criarPainelReproducao(), BorderLayout.SOUTH);
+        add(criarPainelLateral(), BorderLayout.EAST);
+        configurarAcoes();
+    }
+
+    // Área central (texto)
+    private JScrollPane criarEditorTexto() {
         areaTexto = new JTextArea();
         areaTexto.setFont(new Font("Monospaced", Font.PLAIN, 14));
-        JScrollPane scrollPane = new JScrollPane(areaTexto);
-        add(scrollPane, BorderLayout.CENTER);
+        return new JScrollPane(areaTexto);
+    }
 
-        // Painel Superior (Botões de Arquivo)
-        JPanel painelArquivos = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JButton btnAbrirTxt = new JButton("Abrir TXT");
-        JButton btnSalvarTxt = new JButton("Salvar TXT");
-        JButton btnExportarMidi = new JButton("Exportar MIDI");
+    // Painel superior (botões de arquivo)
+    private JPanel criarPainelArquivos() {
+        JPanel painel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        btnAbrirTxt = new JButton("Abrir TXT");
+        btnSalvarTxt = new JButton("Salvar TXT");
+        btnExportarMidi = new JButton("Exportar MIDI");
 
-        painelArquivos.add(btnAbrirTxt);
-        painelArquivos.add(btnSalvarTxt);
-        painelArquivos.add(btnExportarMidi);
-        add(painelArquivos, BorderLayout.NORTH);
+        painel.add(btnAbrirTxt);
+        painel.add(btnSalvarTxt);
+        painel.add(btnExportarMidi);
+        return painel;
+    }
 
-        // Painel Inferior (Botões de Reprodução)
-        JPanel painelReproducao = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        JButton btnTocar = new JButton("Tocar");
-        painelReproducao.add(btnTocar);
-        add(painelReproducao, BorderLayout.SOUTH);
+    // Painel inferior (botão de reprodução)
+    private JPanel criarPainelReproducao() {
+        JPanel painel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        btnTocar = new JButton("Tocar");
+        painel.add(btnTocar);
+        return painel;
+    }
 
-        // Painel Lateral: BPM inicial
+    // Painel lateral: BPM inicial e instrumento base de cada voz
+    private JPanel criarPainelLateral() {
+        JPanel painelLateral = new JPanel(new BorderLayout());
+        painelLateral.add(criarPainelBpm(), BorderLayout.NORTH);
+        painelLateral.add(criarPainelInstrumentos(), BorderLayout.CENTER);
+
+        // Envolve em outro painel para os componentes não esticarem até o fim da janela
+        JPanel painelLateralTopo = new JPanel(new BorderLayout());
+        painelLateralTopo.add(painelLateral, BorderLayout.NORTH);
+        return painelLateralTopo;
+    }
+
+    private JPanel criarPainelBpm() {
         JPanel painelBpm = new JPanel(new FlowLayout(FlowLayout.LEFT));
         painelBpm.setBorder(BorderFactory.createTitledBorder("Andamento"));
-        // Valor inicial 120, mínimo 20, máximo 300, passo 5
-        spinnerBpm = new JSpinner(new SpinnerNumberModel(controlador.getBpm(), 20, 300, 5));
+        // Valor inicial 120, passo 5; limites vêm do controlador
+        SpinnerNumberModel modeloBpm = new SpinnerNumberModel(
+                controlador.getBpm(), ControladorAudio.BPM_MINIMO, ControladorAudio.BPM_MAXIMO, 5);
+        spinnerBpm = new JSpinner(modeloBpm);
         painelBpm.add(new JLabel("BPM:"));
         painelBpm.add(spinnerBpm);
+        return painelBpm;
+    }
 
-        // Painel Lateral: instrumento base de cada voz
+    private JPanel criarPainelInstrumentos() {
         int totalVozes = controlador.getTotalVozes();
         JPanel painelInstrumentos = new JPanel(new GridLayout(totalVozes, 2, 5, 5));
         painelInstrumentos.setBorder(BorderFactory.createTitledBorder("Instrumentos"));
@@ -71,28 +106,44 @@ public class TelaPrincipal extends JFrame {
             painelInstrumentos.add(new JLabel("Voz " + i + ":"));
             painelInstrumentos.add(combosInstrumento[i]);
         }
-        JPanel painelLateral = new JPanel(new BorderLayout());
-        painelLateral.add(painelBpm, BorderLayout.NORTH);
-        painelLateral.add(painelInstrumentos, BorderLayout.CENTER);
-        // Envolve em outro painel para os componentes não esticarem até o fim da janela
-        JPanel painelLateralTopo = new JPanel(new BorderLayout());
-        painelLateralTopo.add(painelLateral, BorderLayout.NORTH);
-        add(painelLateralTopo, BorderLayout.EAST);
+        return painelInstrumentos;
+    }
 
-        // Ações dos Botões
-        btnTocar.addActionListener(this::aoClicarTocar);
-        btnAbrirTxt.addActionListener(this::aoClicarAbrirTxt);
-        btnSalvarTxt.addActionListener(this::aoClicarSalvarTxt);
-        btnExportarMidi.addActionListener(this::aoClicarExportarMidi);
+    // Liga cada botão ao método que trata o clique
+    private void configurarAcoes() {
+        btnTocar.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                aoClicarTocar();
+            }
+        });
+        btnAbrirTxt.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                aoClicarAbrirTxt();
+            }
+        });
+        btnSalvarTxt.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                aoClicarSalvarTxt();
+            }
+        });
+        btnExportarMidi.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                aoClicarExportarMidi();
+            }
+        });
     }
 
     // A janela fica bloqueada até a música terminar (decisão de projeto: tudo em uma thread só)
-    private void aoClicarTocar(ActionEvent e) {
+    private void aoClicarTocar() {
         aplicarConfiguracao();
         controlador.tocarTexto(areaTexto.getText());
     }
 
-    private void aoClicarAbrirTxt(ActionEvent e) {
+    private void aoClicarAbrirTxt() {
         JFileChooser chooser = new JFileChooser();
         chooser.setFileFilter(new FileNameExtensionFilter("Arquivos de Texto", "txt"));
         if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -105,7 +156,7 @@ public class TelaPrincipal extends JFrame {
         }
     }
 
-    private void aoClicarSalvarTxt(ActionEvent e) {
+    private void aoClicarSalvarTxt() {
         if (arquivoTxtAtual != null) {
             try {
                 arquivoService.salvar(areaTexto.getText(), arquivoTxtAtual);
@@ -118,7 +169,7 @@ public class TelaPrincipal extends JFrame {
         }
     }
 
-    private void aoClicarExportarMidi(ActionEvent e) {
+    private void aoClicarExportarMidi() {
         JFileChooser chooser = new JFileChooser();
         chooser.setFileFilter(new FileNameExtensionFilter("Arquivos MIDI", "mid"));
         if (chooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
