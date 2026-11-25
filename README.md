@@ -1,6 +1,38 @@
 # PROJECT-INFO1120-DEV-SW AKA Pepper Music Player
 
+![Tela atual do Pepper Music Player](docs/telaAtual.png)
+
 Gerador de sequências musicais a partir de texto INF01120 
+
+## Baixar e executar o JAR
+
+É preciso ter o Java 21 ou superior instalado (confira com `java -version`). Não precisa do Maven.
+
+1. Na página do repositório no GitHub, clique na versão mais recente em **Releases**:
+
+   ![Releases na página do repositório](docs/acharReleases.png)
+
+2. Em **Assets**, baixe o arquivo `pepper_music_player-v1.0.0.jar`:
+
+   ![Arquivo JAR na lista de Assets](docs/arquivoJar.png)
+
+3. Execute com dois cliques no arquivo ou pelo terminal, na pasta em que ele foi baixado:
+
+   **Windows (PowerShell)**
+
+   ```powershell
+   cd "$HOME\Downloads"
+   java -jar pepper_music_player-v1.0.0.jar
+   ```
+
+   **Linux**
+
+   ```bash
+   cd ~/Downloads
+   java -jar pepper_music_player-v1.0.0.jar
+   ```
+
+   Se não abrir com dois cliques, use o terminal: o sistema pode estar associando os arquivos `.jar` a uma versão antiga do Java.
 
 ## Requisitos
 
@@ -22,7 +54,7 @@ Na pasta do projeto (onde está o `pom.xml`):
 
 ```bash
 mvn clean package
-java -jar target/pepper_music_player-1.0-SNAPSHOT.jar
+java -jar target/pepper_music_player-v1.0.0.jar
 ```
 
 - `mvn clean package` apaga o `target/`, compila e gera um JAR único (*fat JAR*, via `maven-shade-plugin`) que já inclui o JFugue.
@@ -70,103 +102,6 @@ src/test/java/pepper/            testes (JUnit 5)
 docs/example1_fase2.txt          exemplo de música
 ```
 
-## Arquitetura
-
-Camadas do programa:
-
-```mermaid
-classDiagram
-    direction TB
-    class TelaPrincipal
-    class ArquivoTextoService {
-        +carregar(File) String
-        +salvar(String, File)
-    }
-    class ControladorAudio {
-        +BPM_MINIMO : int
-        +BPM_MAXIMO : int
-        +setBpm(int)
-        +setInstrumentoVoz(int, Instrumento)
-        +tocarTexto(String)
-        +exportarMidi(String, String)
-        -prepararTrilhas(String) List
-    }
-    class TradutorMusical {
-        <<interface>>
-        +traduzir(String, int[]) List
-    }
-    class Tocador {
-        <<interface>>
-        +definirBpm(int)
-        +tocarSequencia(List)
-        +exportarMidi(List, String)
-    }
-    class TradutorInstrucao
-    class TocadorAudio
-    class Duracao {
-        <<enumeration>>
-    }
-    class FalhaExportacaoMidi
-
-    TelaPrincipal --> ControladorAudio
-    TelaPrincipal --> ArquivoTextoService
-    ControladorAudio --> TradutorMusical
-    ControladorAudio --> Tocador
-    TradutorMusical <|.. TradutorInstrucao
-    Tocador <|.. TocadorAudio
-    TocadorAudio ..> Duracao
-    TocadorAudio ..> FalhaExportacaoMidi : lança
-```
-
-Como o texto vira eventos (dentro do `TradutorInstrucao`):
-
-```mermaid
-classDiagram
-    direction TB
-    class TradutorInstrucao {
-        -regras : List~RegraInstrucao~
-        +traduzir(String, int[]) List
-    }
-    class RegraInstrucao {
-        <<interface>>
-        +reconhece(String, int) boolean
-        +executar(String, int, ContextoTraducao) int
-    }
-    class RegraNota
-    class RegraOitava
-    class RegraVolume
-    class RegraAndamento
-    class RegraRepeticaoOuPausa
-    class ContextoTraducao {
-        +iniciarLinha(int, int, int)
-        +adicionarNota(String, int)
-        +subirOitava()
-        +dobrarVolume()
-        +acelerar()
-    }
-    class EventoAudio {
-        -nota : String
-        -duracao : int
-    }
-    class EstadoVoz {
-        -instrumento : int
-        -oitava : int
-        -volume : int
-        -variacaoBpm : int
-    }
-
-    TradutorInstrucao o-- RegraInstrucao
-    TradutorInstrucao --> ContextoTraducao
-    RegraInstrucao <|.. RegraNota
-    RegraInstrucao <|.. RegraOitava
-    RegraInstrucao <|.. RegraVolume
-    RegraInstrucao <|.. RegraAndamento
-    RegraInstrucao <|.. RegraRepeticaoOuPausa
-    RegraInstrucao ..> ContextoTraducao
-    ContextoTraducao ..> EventoAudio : cria
-    EventoAudio *-- EstadoVoz
-```
-
 Fluxo principal:
 
 ```
@@ -203,4 +138,4 @@ Durante o desenvolvimento, o grupo usou assistentes de IA para:
 - **Convenções:** discussão de convenções de código Java e Maven (tipos, pacotes, estrutura do projeto).
 - **Configuração:** geração e ajustes do `pom.xml`.
 - **Documentação:** redação de partes deste README.
-- **Testes:** criação de músicas de exemplo.
+- **Testes:** criação de músicas de exemplo e testes.
