@@ -6,6 +6,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
 
 public class TelaPrincipal extends JFrame {
     private JTextArea areaTexto;
@@ -147,11 +148,16 @@ public class TelaPrincipal extends JFrame {
         JFileChooser chooser = new JFileChooser();
         chooser.setFileFilter(new FileNameExtensionFilter("Arquivos de Texto", "txt"));
         if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            File escolhido = chooser.getSelectedFile();
             try {
-                arquivoTxtAtual = chooser.getSelectedFile();
-                areaTexto.setText(arquivoService.carregar(arquivoTxtAtual));
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Erro ao abrir: " + ex.getMessage());
+                String conteudo = arquivoService.carregar(escolhido);
+                // Só guarda o arquivo atual se a leitura deu certo (evita sobrescrever um arquivo que falhou)
+                arquivoTxtAtual = escolhido;
+                areaTexto.setText(conteudo);
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this,
+                        "Não foi possível abrir o arquivo: " + ex.getMessage(),
+                        "Erro de leitura", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -161,8 +167,10 @@ public class TelaPrincipal extends JFrame {
             try {
                 arquivoService.salvar(areaTexto.getText(), arquivoTxtAtual);
                 JOptionPane.showMessageDialog(this, "Arquivo salvo com sucesso!");
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Erro ao salvar: " + ex.getMessage());
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this,
+                        "Não foi possível salvar o arquivo: " + ex.getMessage(),
+                        "Erro de gravação", JOptionPane.ERROR_MESSAGE);
             }
         } else {
             JOptionPane.showMessageDialog(this, "Abra um arquivo TXT primeiro.");
@@ -178,8 +186,15 @@ public class TelaPrincipal extends JFrame {
                 arquivoMidi = new File(arquivoMidi.getParentFile(), arquivoMidi.getName() + ".mid");
             }
             aplicarConfiguracao();
-            controlador.exportarMidi(areaTexto.getText(), arquivoMidi.getAbsolutePath());
-            JOptionPane.showMessageDialog(this, "MIDI exportado com sucesso!");
+            try {
+                controlador.exportarMidi(areaTexto.getText(), arquivoMidi.getAbsolutePath());
+                // Só chega aqui se a exportação não lançou exceção
+                JOptionPane.showMessageDialog(this, "MIDI exportado com sucesso!");
+            } catch (FalhaExportacaoMidi ex) {
+                JOptionPane.showMessageDialog(this,
+                        ex.getMessage(),
+                        "Erro de exportação", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
