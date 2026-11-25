@@ -140,8 +140,26 @@ public class TelaPrincipal extends JFrame {
 
     // A janela fica bloqueada até a música terminar (decisão de projeto: tudo em uma thread só)
     private void aoClicarTocar() {
-        aplicarConfiguracao();
+        if (!validarTexto()) {
+            return;
+        }
+        if (!aplicarConfiguracao()) {
+            return;
+        }
         controlador.tocarTexto(areaTexto.getText());
+    }
+
+    // Avisa o usuário (em vez de não fazer nada) quando o editor não tem conteúdo musical
+    private boolean validarTexto() {
+        String texto = areaTexto.getText();
+        if (texto == null || texto.isBlank()) {
+            JOptionPane.showMessageDialog(this,
+                    "Digite uma instrução musical antes de continuar.",
+                    "Texto vazio", JOptionPane.WARNING_MESSAGE);
+            areaTexto.requestFocusInWindow();
+            return false;
+        }
+        return true;
     }
 
     private void aoClicarAbrirTxt() {
@@ -178,6 +196,9 @@ public class TelaPrincipal extends JFrame {
     }
 
     private void aoClicarExportarMidi() {
+        if (!validarTexto()) {
+            return;
+        }
         JFileChooser chooser = new JFileChooser();
         chooser.setFileFilter(new FileNameExtensionFilter("Arquivos MIDI", "mid"));
         if (chooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -185,7 +206,9 @@ public class TelaPrincipal extends JFrame {
             if (!arquivoMidi.getName().toLowerCase().endsWith(".mid")) {
                 arquivoMidi = new File(arquivoMidi.getParentFile(), arquivoMidi.getName() + ".mid");
             }
-            aplicarConfiguracao();
+            if (!aplicarConfiguracao()) {
+                return;
+            }
             try {
                 controlador.exportarMidi(areaTexto.getText(), arquivoMidi.getAbsolutePath());
                 // Só chega aqui se a exportação não lançou exceção
@@ -198,11 +221,19 @@ public class TelaPrincipal extends JFrame {
         }
     }
 
-    // Passa ao controlador o que o usuário configurou na tela (BPM e instrumento de cada voz)
-    private void aplicarConfiguracao() {
-        controlador.setBpm((Integer) spinnerBpm.getValue());
-        for (int i = 0; i < combosInstrumento.length; i++) {
-            controlador.setInstrumentoVoz(i, (Instrumento) combosInstrumento[i].getSelectedItem());
+    // Passa ao controlador o que o usuário configurou na tela (BPM e instrumento de cada voz).
+    // Devolve false (e avisa o usuário) se o controlador recusar algum valor.
+    private boolean aplicarConfiguracao() {
+        try {
+            controlador.setBpm((Integer) spinnerBpm.getValue());
+            for (int i = 0; i < combosInstrumento.length; i++) {
+                controlador.setInstrumentoVoz(i, (Instrumento) combosInstrumento[i].getSelectedItem());
+            }
+            return true;
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(),
+                    "Configuração inválida", JOptionPane.WARNING_MESSAGE);
+            return false;
         }
     }
 }
